@@ -1,0 +1,12 @@
+Source: ros-hydro-find-object-2d
+Section: misc
+Priority: extra
+Maintainer: Mathieu Labbe <matlabbe@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), ros-hydro-catkin, ros-hydro-cv-bridge, ros-hydro-genmsg, ros-hydro-image-transport, ros-hydro-message-filters, ros-hydro-pcl-ros, ros-hydro-roscpp, ros-hydro-rospy, ros-hydro-sensor-msgs, ros-hydro-std-msgs, ros-hydro-std-srvs, ros-hydro-tf
+Homepage: http://find-object.googlecode.com
+Standards-Version: 3.9.2
+
+Package: ros-hydro-find-object-2d
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-hydro-cv-bridge, ros-hydro-image-transport, ros-hydro-message-filters, ros-hydro-pcl-ros, ros-hydro-roscpp, ros-hydro-rospy, ros-hydro-sensor-msgs, ros-hydro-std-msgs, ros-hydro-std-srvs, ros-hydro-tf
+Description: The find_object_2d package
