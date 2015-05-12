@@ -1,0 +1,12 @@
+Source: ros-jade-find-object-2d
+Section: misc
+Priority: extra
+Maintainer: Mathieu Labbe <matlabbe@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), ros-jade-catkin, ros-jade-cv-bridge, ros-jade-genmsg, ros-jade-image-transport, ros-jade-message-filters, ros-jade-pcl-ros, ros-jade-roscpp, ros-jade-rospy, ros-jade-sensor-msgs, ros-jade-std-msgs, ros-jade-std-srvs, ros-jade-tf
+Homepage: http://find-object.googlecode.com
+Standards-Version: 3.9.2
+
+Package: ros-jade-find-object-2d
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-jade-cv-bridge, ros-jade-image-transport, ros-jade-message-filters, ros-jade-pcl-ros, ros-jade-roscpp, ros-jade-rospy, ros-jade-sensor-msgs, ros-jade-std-msgs, ros-jade-std-srvs, ros-jade-tf
+Description: The find_object_2d package
