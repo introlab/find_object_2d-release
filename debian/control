@@ -1,0 +1,12 @@
+Source: ros-kinetic-find-object-2d
+Section: misc
+Priority: extra
+Maintainer: Mathieu Labbe <matlabbe@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), ros-kinetic-catkin, ros-kinetic-cv-bridge, ros-kinetic-genmsg, ros-kinetic-image-transport, ros-kinetic-message-filters, ros-kinetic-roscpp, ros-kinetic-rospy, ros-kinetic-sensor-msgs, ros-kinetic-std-msgs, ros-kinetic-std-srvs, ros-kinetic-tf
+Homepage: http://find-object.googlecode.com
+Standards-Version: 3.9.2
+
+Package: ros-kinetic-find-object-2d
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-kinetic-cv-bridge, ros-kinetic-image-transport, ros-kinetic-message-filters, ros-kinetic-roscpp, ros-kinetic-rospy, ros-kinetic-sensor-msgs, ros-kinetic-std-msgs, ros-kinetic-std-srvs, ros-kinetic-tf
+Description: The find_object_2d package
