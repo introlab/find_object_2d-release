@@ -1,3 +1,26 @@
+## find_object_2d (kinetic) - 0.6.2-0
+
+The packages in the `find_object_2d` repository were released into the `kinetic` distro by running `/usr/bin/bloom-release find_object_2d --track kinetic --rosdistro kinetic` on `Tue, 07 Nov 2017 16:42:51 -0000`
+
+The `find_object_2d` package was released.
+
+Version of package(s) in repository `find_object_2d`:
+
+- upstream repository: https://github.com/introlab/find-object.git
+- release repository: https://github.com/introlab/find_object_2d-release.git
+- rosdistro version: `0.6.1-5`
+- old version: `0.6.1-5`
+- new version: `0.6.2-0`
+
+Versions of tools used:
+
+- bloom version: `0.6.1`
+- catkin_pkg version: `0.3.9`
+- rosdep version: `0.11.8`
+- rosdistro version: `0.6.2`
+- vcstools version: `0.1.39`
+
+
 ## find_object_2d (kinetic) - 0.6.1-5
 
 The packages in the `find_object_2d` repository were released into the `kinetic` distro by running `/usr/bin/bloom-release find_object_2d --track kinetic --rosdistro kinetic` on `Mon, 09 May 2016 15:31:34 -0000`
