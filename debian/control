@@ -1,0 +1,12 @@
+Source: ros-lunar-find-object-2d
+Section: misc
+Priority: extra
+Maintainer: Mathieu Labbe <matlabbe@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), ros-lunar-catkin, ros-lunar-cv-bridge, ros-lunar-genmsg, ros-lunar-image-transport, ros-lunar-message-filters, ros-lunar-qt-gui-cpp, ros-lunar-roscpp, ros-lunar-rospy, ros-lunar-sensor-msgs, ros-lunar-std-msgs, ros-lunar-std-srvs, ros-lunar-tf
+Homepage: http://find-object.googlecode.com
+Standards-Version: 3.9.2
+
+Package: ros-lunar-find-object-2d
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-lunar-cv-bridge, ros-lunar-image-transport, ros-lunar-message-filters, ros-lunar-qt-gui-cpp, ros-lunar-roscpp, ros-lunar-rospy, ros-lunar-sensor-msgs, ros-lunar-std-msgs, ros-lunar-std-srvs, ros-lunar-tf
+Description: The find_object_2d package
