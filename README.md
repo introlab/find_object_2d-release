@@ -1,3 +1,26 @@
+## find_object_2d (melodic) - 0.6.2-0
+
+The packages in the `find_object_2d` repository were released into the `melodic` distro by running `/usr/bin/bloom-release find_object_2d --track melodic --rosdistro melodic --new-track` on `Fri, 18 May 2018 18:36:19 -0000`
+
+The `find_object_2d` package was released.
+
+Version of package(s) in repository `find_object_2d`:
+
+- upstream repository: https://github.com/introlab/find-object.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `0.6.2-0`
+
+Versions of tools used:
+
+- bloom version: `0.6.4`
+- catkin_pkg version: `0.4.1`
+- rosdep version: `0.12.2`
+- rosdistro version: `0.6.8`
+- vcstools version: `0.1.40`
+
+
 ## find_object_2d (lunar) - 0.6.2-0
 
 The packages in the `find_object_2d` repository were released into the `lunar` distro by running `/usr/bin/bloom-release find_object_2d --track lunar --rosdistro lunar --new-track` on `Tue, 07 Nov 2017 16:47:14 -0000`
