@@ -23,10 +23,24 @@ ENDIF(NOT DEFINED CMAKE_INSTALL_LIBDIR)
 
 INCLUDE(GNUInstallDirs)
 
+####### local cmake modules #######
+SET(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules")
+
+# Policy CMP0043 introduced in cmake version 3.0 IGNORES the use of COMPILE_DEFINITIONS suffixed variables, e.g. COMPILE_DEFINITIONS_DEBUG
+# Set to OLD behavior until minimum cmake version >= 2.8.10 (version that COMPILE_DEFINITIONS can be set by generator expressions instead)
+if (POLICY CMP0043)
+   cmake_policy(SET CMP0043 OLD)
+endif (POLICY CMP0043)
+# Policy CMP0042 introduced in cmake version 3.0 enables the use of @rpath in an install name via MACOSX_RPATH by default
+# Set to OLD behavior so that all versions use the same behavior, or until minimum cmake version >= 2.8.12 (version where @rpath is available)
+if (POLICY CMP0042)
+   cmake_policy(SET CMP0042 OLD)
+endif (POLICY CMP0042)
+
 #######################
 # VERSION
 #######################
-SET(PROJECT_VERSION "0.6.2")
+SET(PROJECT_VERSION "0.6.3")
 SET(PROJECT_PREFIX find_object)
 
 STRING(REGEX MATCHALL "[0-9]" PROJECT_VERSION_PARTS "${PROJECT_VERSION}")
@@ -41,6 +55,29 @@ ADD_DEFINITIONS(-DPROJECT_NAME="${PROJECT_NAME}")
 ####### DEPENDENCIES #######
 FIND_PACKAGE(OpenCV REQUIRED) # tested on 2.3.1
 
+# For SuperPoint
+SET(TORCH 0)
+FIND_PACKAGE(Torch QUIET)
+IF(TORCH_FOUND)
+    MESSAGE(STATUS "Found Torch: ${TORCH_INCLUDE_DIRS}")
+    SET(TORCH 1)
+ENDIF(TORCH_FOUND)
+
+IF(OpenCV_VERSION_MAJOR EQUAL 4)
+  IF(NOT MSVC)
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+    CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+    IF(COMPILER_SUPPORTS_CXX11)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    ELSEIF(COMPILER_SUPPORTS_CXX0X)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    ELSE()
+      message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+    ENDIF()
+  ENDIF(NOT MSVC)
+ENDIF(OpenCV_VERSION_MAJOR EQUAL 4)
+
 # look for Qt5 before Qt4
 FIND_PACKAGE(Qt5 COMPONENTS Widgets Core Gui Network QUIET)
 IF(NOT Qt5_FOUND)
@@ -48,10 +85,23 @@ IF(NOT Qt5_FOUND)
 ENDIF(NOT Qt5_FOUND)
 ADD_DEFINITIONS(-DQT_NO_KEYWORDS) # To avoid conflicts with boost signals used in ROS
 
-SET(NONFREE 0)
-IF(OPENCV_NONFREE_FOUND OR OPENCV_XFEATURES2D_FOUND)
-   SET(NONFREE 1)
-ENDIF(OPENCV_NONFREE_FOUND OR OPENCV_XFEATURES2D_FOUND)
+FIND_PACKAGE(Tcmalloc QUIET)
+
+FIND_PACKAGE(ZLIB REQUIRED QUIET)
+
+SET(NONFREE 1)
+IF(NOT (OPENCV_NONFREE_FOUND OR OPENCV_XFEATURES2D_FOUND))
+   SET(NONFREE 0)
+ELSEIF(OpenCV_VERSION VERSION_GREATER "3.4.2")
+  FIND_FILE(OpenCV_MODULES_HPP opencv2/opencv_modules.hpp 
+    PATHS ${OpenCV_INCLUDE_DIRS}
+    NO_DEFAULT_PATH)
+  FILE(READ ${OpenCV_MODULES_HPP} TMPTXT)
+  STRING(FIND "${TMPTXT}" "#define OPENCV_ENABLE_NONFREE" matchres)
+  IF(${matchres} EQUAL -1)
+    SET(NONFREE 0)
+  ENDIF(${matchres} EQUAL -1)
+ENDIF()
 
 CONFIGURE_FILE(Version.h.in ${PROJECT_SOURCE_DIR}/include/${PROJECT_PREFIX}/Version.h)
 
@@ -116,9 +166,9 @@ IF(NOT CATKIN_BUILD)
    ADD_SUBDIRECTORY( src )
    ADD_SUBDIRECTORY( app )
    ADD_SUBDIRECTORY( tools )
-   IF(NONFREE)
+   IF(NONFREE OR OpenCV_VERSION VERSION_GREATER "4.2.0") # SIFT is free from 4.3.0
    ADD_SUBDIRECTORY( example )
-   ENDIF(NONFREE)
+   ENDIF(NONFREE OR OpenCV_VERSION VERSION_GREATER "4.2.0")
 
    #######################
    # Uninstall target, for "make uninstall"
@@ -239,9 +289,22 @@ IF(NOT CATKIN_BUILD)
      ENDIF()
    ELSE()
      IF(OPENCV_XFEATURES2D_FOUND)
-       MESSAGE(STATUS "  With OpenCV 3 xfeatures2d module (SIFT/SURF/BRIEF/FREAK) = YES")
+       MESSAGE(STATUS "  With OpenCV ${OpenCV_VERSION_MAJOR} xfeatures2d module (BRIEF/FREAK/KAZE) = YES")
      ELSE()
-       MESSAGE(STATUS "  With OpenCV 3 xfeatures2d module (SIFT/SURF/BRIEF/FREAK) = NO (not found)")
+       MESSAGE(STATUS "  With OpenCV ${OpenCV_VERSION_MAJOR} xfeatures2d module (BRIEF/FREAK/KAZE) = NO (not found)")
+     ENDIF()
+     IF(OpenCV_VERSION VERSION_GREATER "4.2.0")
+       IF(NONFREE)
+         MESSAGE(STATUS "  With OpenCV ${OpenCV_VERSION_MAJOR} nonfree module (SURF) = YES")
+       ELSE()
+         MESSAGE(STATUS "  With OpenCV ${OpenCV_VERSION_MAJOR} nonfree module (SURF) = NO")
+       ENDIF()
+     ELSEIF()
+       IF(NONFREE)
+         MESSAGE(STATUS "  With OpenCV ${OpenCV_VERSION_MAJOR} nonfree module (SIFT/SURF) = YES")
+       ELSE()
+         MESSAGE(STATUS "  With OpenCV ${OpenCV_VERSION_MAJOR} nonfree module (SIFT/SURF) = NO")
+       ENDIF()
      ENDIF()
    ENDIF()
 
@@ -253,8 +316,20 @@ IF(NOT CATKIN_BUILD)
       MESSAGE(STATUS "  With Qt = NO (Qt not found)")
    ENDIF()
 
+   IF(Tcmalloc_FOUND)
+      MESSAGE(STATUS "  With tcmalloc = YES")
+   ELSE()
+      MESSAGE(STATUS "  With tcmalloc = NO (tcmalloc not found)")
+   ENDIF(Tcmalloc_FOUND)
+   
+   IF(TORCH_FOUND)
+      MESSAGE(STATUS "  With Torch = YES")
+   ELSE()
+      MESSAGE(STATUS "  With Torch = NO (libtorch not found)")
+   ENDIF(TORCH_FOUND)
+
    IF(APPLE)
-   MESSAGE(STATUS "  BUILD_AS_BUNDLE = ${BUILD_AS_BUNDLE}")
+      MESSAGE(STATUS "  BUILD_AS_BUNDLE = ${BUILD_AS_BUNDLE}")
    ENDIF(APPLE)
    MESSAGE(STATUS "--------------------------------------------")
 
@@ -265,13 +340,14 @@ ELSE()
    ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
    ## is used, also find other catkin packages
    find_package(catkin REQUIRED COMPONENTS 
-           cv_bridge roscpp rospy sensor_msgs std_msgs image_transport genmsg message_filters tf
+           cv_bridge roscpp rospy sensor_msgs std_msgs image_transport message_filters tf message_generation
    )
 
    ## Generate messages in the 'msg' folder
    add_message_files(
       FILES
       ObjectsStamped.msg
+      DetectionInfo.msg
    )
 
    ## Generate added messages and services with any dependencies listed here
@@ -291,7 +367,7 @@ ELSE()
    ## CATKIN_DEPENDS: catkin_packages dependent projects also need
    ## DEPENDS: system dependencies of this project that dependent projects also need
    catkin_package(
-     CATKIN_DEPENDS cv_bridge roscpp rospy sensor_msgs std_msgs image_transport message_filters tf
+     CATKIN_DEPENDS cv_bridge roscpp rospy sensor_msgs std_msgs image_transport message_filters tf message_runtime
    )
 
    ###########

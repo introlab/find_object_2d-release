@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "find_object/FindObjectExp.h" // DLL export/import defines
 
 #include "find_object/DetectionInfo.h"
+#include "find_object/Settings.h"
 
 #include <QtCore/QObject>
 #include <QtCore/QString>
@@ -64,7 +65,7 @@ public:
 	FindObject(bool keepImagesInRAM_ = true, QObject * parent = 0);
 	virtual ~FindObject();
 
-	bool loadSession(const QString & path);
+	bool loadSession(const QString & path, const ParametersMap & customParameters = ParametersMap());
 	bool saveSession(const QString & path);
 	bool isSessionModified() const {return sessionModified_;}
 
@@ -91,9 +92,10 @@ public Q_SLOTS:
 	void addObjectAndUpdate(const cv::Mat & image, int id=0, const QString & filePath = QString());
 	void removeObjectAndUpdate(int id);
 	void detect(const cv::Mat & image); // emit objectsFound()
+	void detect(const cv::Mat & image, const QString & frameId, double stamp, const cv::Mat & depth, float depthConstant); // emit objectsFound()
 
 Q_SIGNALS:
-	void objectsFound(const find_object::DetectionInfo &);
+	void objectsFound(const find_object::DetectionInfo &, const QString &, double, const cv::Mat &, float);
 
 private:
 	void clearVocabulary();
