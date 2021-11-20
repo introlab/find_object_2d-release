@@ -1,3 +1,26 @@
+## find_object_2d (noetic) - 0.6.4-2
+
+The packages in the `find_object_2d` repository were released into the `noetic` distro by running `/usr/bin/bloom-release find_object_2d --rosdistro noetic` on `Sat, 20 Nov 2021 20:52:15 -0000`
+
+The `find_object_2d` package was released.
+
+Version of package(s) in repository `find_object_2d`:
+
+- upstream repository: https://github.com/introlab/find-object.git
+- release repository: https://github.com/introlab/find_object_2d-release.git
+- rosdistro version: `0.6.3-5`
+- old version: `0.6.4-1`
+- new version: `0.6.4-2`
+
+Versions of tools used:
+
+- bloom version: `0.10.7`
+- catkin_pkg version: `0.4.24`
+- rosdep version: `0.21.0`
+- rosdistro version: `0.8.3`
+- vcstools version: `0.1.42`
+
+
 ## find_object_2d (melodic) - 0.6.4-2
 
 The packages in the `find_object_2d` repository were released into the `melodic` distro by running `/usr/bin/bloom-release find_object_2d --rosdistro melodic` on `Sat, 20 Nov 2021 20:48:12 -0000`
