@@ -42,6 +42,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QGraphicsRectItem>
 #include <stdio.h>
 
+#if CV_MAJOR_VERSION > 3
+#include <opencv2/core/types_c.h>
+#endif
+
 namespace find_object {
 
 FindObject::FindObject(bool keepImagesInRAM, QObject * parent) :
@@ -53,6 +57,7 @@ FindObject::FindObject(bool keepImagesInRAM, QObject * parent) :
 	keepImagesInRAM_(keepImagesInRAM)
 {
 	qRegisterMetaType<find_object::DetectionInfo>("find_object::DetectionInfo");
+	qRegisterMetaType<find_object::Header>("find_object::Header");
 	UASSERT(detector_ != 0 && extractor_ != 0);
 
 	if(Settings::getGeneral_debug())
@@ -74,7 +79,7 @@ FindObject::~FindObject() {
 	objectsDescriptors_.clear();
 }
 
-bool FindObject::loadSession(const QString & path)
+bool FindObject::loadSession(const QString & path, const ParametersMap & customParameters)
 {
 	if(QFile::exists(path) && !path.isEmpty() && QFileInfo(path).suffix().compare("bin") == 0)
 	{
@@ -88,10 +93,20 @@ bool FindObject::loadSession(const QString & path)
 		in >> parameters;
 		for(QMap<QString, QVariant>::iterator iter=parameters.begin(); iter!=parameters.end(); ++iter)
 		{
-			Settings::setParameter(iter.key(), iter.value());
+			QMap<QString, QVariant>::const_iterator cter = customParameters.find(iter.key());
+			if(cter != customParameters.constEnd())
+			{
+				Settings::setParameter(cter.key(), cter.value());
+			}
+			else
+			{
+				Settings::setParameter(iter.key(), iter.value());
+			}
 		}
 
-		// save vocabulary
+		updateDetectorExtractor();
+
+		// load vocabulary
 		vocabulary_->load(in);
 
 		// load objects
@@ -156,7 +171,26 @@ bool FindObject::saveSession(const QString & path)
 
 bool FindObject::saveVocabulary(const QString & filePath) const
 {
-	return vocabulary_->save(filePath);
+	if(!filePath.isEmpty() && QFileInfo(filePath).suffix().compare("bin") == 0)
+	{
+		QFile file(filePath);
+		file.open(QIODevice::WriteOnly);
+		QDataStream out(&file);
+
+		// ignore parameters
+		out << ParametersMap();
+
+		// save vocabulary
+		vocabulary_->save(out, true);
+
+		file.close();
+		return true;
+	}
+	else
+	{
+		return vocabulary_->save(filePath);
+	}
+	return false;
 }
 
 bool FindObject::loadVocabulary(const QString & filePath)
@@ -166,13 +200,35 @@ bool FindObject::loadVocabulary(const QString & filePath)
 		UWARN("Doesn't make sense to load a vocabulary if \"General/vocabularyFixed\" and \"General/invertedSearch\" are not enabled! It will "
 			  "be cleared at the time the objects are updated.");
 	}
-	if(vocabulary_->load(filePath))
+
+	if(QFile::exists(filePath) && !filePath.isEmpty() && QFileInfo(filePath).suffix().compare("bin") == 0)
 	{
-		if(objects_.size())
-		{
-			updateVocabulary();
-		}
+		//binary format (from session format)
+		QFile file(filePath);
+		file.open(QIODevice::ReadOnly);
+		QDataStream in(&file);
+
+		ParametersMap parameters;
+		// ignore parameters
+		in >> parameters;
+
+		// load vocabulary
+		vocabulary_->load(in, true);
+		file.close();
+
 		return true;
+	}
+	else
+	{
+		//yaml/xml format
+		if(vocabulary_->load(filePath))
+		{
+			if(objects_.size())
+			{
+				updateVocabulary();
+			}
+			return true;
+		}
 	}
 	return false;
 }
@@ -668,6 +724,7 @@ public:
 				uFormat("Image of object %d is null or not type CV_8UC1!?!? (cols=%d, rows=%d, type=%d)",
 						objectId, image.cols, image.rows, image.type()).c_str());
 	}
+	virtual ~ExtractFeaturesThread() {}
 	int objectId() const {return objectId_;}
 	const cv::Mat & image() const {return image_;}
 	const std::vector<cv::KeyPoint> & keypoints() const {return keypoints_;}
@@ -683,7 +740,7 @@ protected:
 	{
 		QTime time;
 		time.start();
-		UINFO("Extracting descriptors from object %d...", objectId_);
+		UDEBUG("Extracting descriptors from object %d...", objectId_);
 
 		QTime timeStep;
 		timeStep.start();
@@ -774,6 +831,8 @@ protected:
 					timeDetection_ += threads[k]->timeDetection();
 					timeExtraction_ += threads[k]->timeExtraction();
 					timeSubPix_ += threads[k]->timeSubPix();
+
+					delete threads[k];
 				}
 			}
 		}
@@ -796,6 +855,7 @@ private:
 
 void FindObject::updateObjects(const QList<int> & ids)
 {
+	UINFO("Update %d objects...", ids.size());
 	QList<ObjSignature*> objectsList;
 	if(ids.size())
 	{
@@ -830,7 +890,7 @@ void FindObject::updateObjects(const QList<int> & ids)
 
 		if(objectsList.size())
 		{
-			UINFO("Features extraction from %d objects...", objectsList.size());
+			UINFO("Features extraction from %d objects... (threads=%d)", objectsList.size(), threadCounts);
 			for(int i=0; i<objectsList.size(); i+=threadCounts)
 			{
 				QVector<ExtractFeaturesThread*> threads;
@@ -868,6 +928,7 @@ void FindObject::updateObjects(const QList<int> & ids)
 					{
 						objects_.value(id)->removeImage();
 					}
+					delete threads[j];
 				}
 			}
 			UINFO("Features extraction from %d objects... done! (%d ms)", objectsList.size(), time.elapsed());
@@ -939,6 +1000,8 @@ void FindObject::updateVocabulary(const QList<int> & ids)
 			count += objectsList.at(i)->descriptors().rows;
 		}
 	}
+
+	UINFO("Updating vocabulary with %d objects and %d descriptors...", ids.size(), count);
 
 	// Copy data
 	if(count)
@@ -1045,6 +1108,10 @@ void FindObject::updateVocabulary(const QList<int> & ids)
 			}
 			if(addedWords && !Settings::getGeneral_vocabularyFixed())
 			{
+				if(!incremental)
+				{
+					UINFO("Updating vocabulary...");
+				}
 				vocabulary_->update();
 			}
 
@@ -1317,6 +1384,11 @@ private:
 
 void FindObject::detect(const cv::Mat & image)
 {
+	detect(image, Header(), cv::Mat(), 0.0);
+}
+
+void FindObject::detect(const cv::Mat & image, const Header & header, const cv::Mat & depth, float depthConstant)
+{
 	QTime time;
 	time.start();
 	DetectionInfo info;
@@ -1345,7 +1417,7 @@ void FindObject::detect(const cv::Mat & image)
 
 	if(info.objDetected_.size() > 0 || Settings::getGeneral_sendNoObjDetectedEvents())
 	{
-		Q_EMIT objectsFound(info);
+		Q_EMIT objectsFound(info, header, depth, depthConstant);
 	}
 }
 
@@ -1730,6 +1802,7 @@ bool FindObject::detect(const cv::Mat & image, find_object::DetectionInfo & info
 							info.rejectedOutliers_.insert(id, threads[j]->getOutliers());
 							info.rejectedCodes_.insert(id, code);
 						}
+						delete threads[j];
 					}
 					UDEBUG("Processed matches %d", i+1);
 				}

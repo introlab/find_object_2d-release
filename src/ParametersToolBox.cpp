@@ -346,7 +346,9 @@ void ParametersToolBox::addParameter(QVBoxLayout * layout,
 		if(key.compare(Settings::kFeature2D_1Detector()) == 0)
 		{
 #if FINDOBJECT_NONFREE == 0
+#if CV_MAJOR_VERSION < 4 || (CV_MAJOR_VERSION == 4 && (CV_MINOR_VERSION < 3 || (CV_MINOR_VERSION==3 && !defined(OPENCV_DEV))))
 			widget->setItemData(5, 0, Qt::UserRole - 1); // disable SIFT
+#endif
 			widget->setItemData(7, 0, Qt::UserRole - 1); // disable SURF
 #endif
 #if CV_MAJOR_VERSION < 3
@@ -359,11 +361,16 @@ void ParametersToolBox::addParameter(QVBoxLayout * layout,
 			widget->setItemData(6, 0, Qt::UserRole - 1); // disable Star
 #endif
 #endif
+#if FINDOBJECT_TORCH == 0
+			widget->setItemData(12, 0, Qt::UserRole - 1); // disable SuperPointTorch
+#endif
 		}
 		if(key.compare(Settings::kFeature2D_2Descriptor()) == 0)
 		{
 #if FINDOBJECT_NONFREE == 0
+#if CV_MAJOR_VERSION < 4 || (CV_MAJOR_VERSION == 4 && (CV_MINOR_VERSION < 3 || (CV_MINOR_VERSION==3 && !defined(OPENCV_DEV))))
 			widget->setItemData(2, 0, Qt::UserRole - 1); // disable SIFT
+#endif
 			widget->setItemData(3, 0, Qt::UserRole - 1); // disable SURF
 #endif
 #if CV_MAJOR_VERSION < 3
@@ -381,6 +388,9 @@ void ParametersToolBox::addParameter(QVBoxLayout * layout,
 			widget->setItemData(9, 0, Qt::UserRole - 1); // disable LATCH
 			widget->setItemData(10, 0, Qt::UserRole - 1); // disable DAISY
 #endif
+#endif
+#if FINDOBJECT_TORCH == 0
+			widget->setItemData(11, 0, Qt::UserRole - 1); // disable SuperPointTorch
 #endif
 		}
 		if(key.compare(Settings::kNearestNeighbor_1Strategy()) == 0)
@@ -628,7 +638,7 @@ void ParametersToolBox::changeParameter(QObject * sender, int value)
 					{
 						QStringList tmp = Settings::getFeature2D_2Descriptor().split(':');
 						UASSERT(tmp.size() == 2);
-						QString newTmp = QString('0'+index)+":"+tmp.back();
+						QString newTmp = QString::number(index)+":"+tmp.back();
 						Settings::setFeature2D_2Descriptor(newTmp);
 						descriptorBox->blockSignals(true);
 						this->updateParameter(Settings::kFeature2D_2Descriptor());
