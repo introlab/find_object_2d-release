@@ -244,15 +244,23 @@ MainWindow::MainWindow(FindObject * findObject, Camera * camera, QWidget * paren
 
 	if(findObject_->objects().size())
 	{
+		UINFO("Creating %d object widgets...", findObject_->objects().size());
 		// show objects already loaded in FindObject
+		int i=0;
 		for(QMap<int, ObjSignature *>::const_iterator iter = findObject_->objects().constBegin();
 			iter!=findObject_->objects().constEnd();
 			++iter)
 		{
-			ObjWidget * obj = new ObjWidget(iter.key(), iter.value()->keypoints(), iter.value()->words(), cvtCvMat2QImage(iter.value()->image()));
+			ObjWidget * obj = new ObjWidget(iter.key(), iter.value()->keypoints(), iter.value()->words(), iter.value()->image().empty()?QImage():cvtCvMat2QImage(iter.value()->image()));
 			objWidgets_.insert(obj->id(), obj);
 			this->showObject(obj);
+			++i;
+			if(i % 100 == 0)
+			{
+				UINFO("Created %d/%d widgets...", i, findObject_->objects().size());
+			}
 		}
+		UINFO("Creating %d object widgets... done!", findObject_->objects().size());
 		ui_->actionSave_objects->setEnabled(true);
 		ui_->actionSave_session->setEnabled(true);
 	}
@@ -279,6 +287,7 @@ MainWindow::MainWindow(FindObject * findObject, Camera * camera, QWidget * paren
 MainWindow::~MainWindow()
 {
 	disconnect(camera_, SIGNAL(imageReceived(const cv::Mat &)), this, SLOT(update(const cv::Mat &)));
+	disconnect(camera_, SIGNAL(imageReceived(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)), this, SLOT(update(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)));
 	disconnect(camera_, SIGNAL(finished()), this, SLOT(stopProcessing()));
 	camera_->stop();
 	qDeleteAll(objWidgets_);
@@ -342,7 +351,7 @@ void MainWindow::setupTCPServer()
 		delete tcpServer_;
 	}
 	tcpServer_ = new TcpServer(Settings::getGeneral_port(), this);
-	connect(this, SIGNAL(objectsFound(find_object::DetectionInfo)), tcpServer_, SLOT(publishDetectionInfo(find_object::DetectionInfo)));
+	connect(this, SIGNAL(objectsFound(const find_object::DetectionInfo &, const find_object::Header &, const cv::Mat &, float)), tcpServer_, SLOT(publishDetectionInfo(find_object::DetectionInfo)));
 	ui_->label_ipAddress->setText(tcpServer_->getHostAddress().toString());
 	ui_->label_port->setNum(tcpServer_->getPort());
 	UINFO("Detection sent on port: %d (IP=%s)", tcpServer_->getPort(), tcpServer_->getHostAddress().toString().toStdString().c_str());
@@ -406,7 +415,7 @@ void MainWindow::loadSession()
 
 			}
 
-			QMessageBox::information(this, tr("Session loaded!"), tr("Session \"%1\" successfully loaded (%2 objects)!").arg(path).arg(objWidgets_.size()));
+			QMessageBox::information(this, tr("Session loaded!"), tr("Session \"%1\" successfully loaded (%2 objects, %3 vocabulary words)!").arg(path).arg(objWidgets_.size()).arg(findObject_->vocabulary()->size()));
 
 			if(!camera_->isRunning() && !sceneImage_.empty())
 			{
@@ -417,20 +426,17 @@ void MainWindow::loadSession()
 }
 void MainWindow::saveSession()
 {
-	if(objWidgets_.size())
+	QString path = QFileDialog::getSaveFileName(this, tr("Save session..."), Settings::workingDirectory(), "*.bin");
+	if(!path.isEmpty())
 	{
-		QString path = QFileDialog::getSaveFileName(this, tr("Save session..."), Settings::workingDirectory(), "*.bin");
-		if(!path.isEmpty())
+		if(QFileInfo(path).suffix().compare("bin") != 0)
 		{
-			if(QFileInfo(path).suffix().compare("bin") != 0)
-			{
-				path.append(".bin");
-			}
+			path.append(".bin");
+		}
 
-			if(findObject_->saveSession(path))
-			{
-				QMessageBox::information(this, tr("Session saved!"), tr("Session \"%1\" successfully saved (%2 objects)!").arg(path).arg(objWidgets_.size()));
-			}
+		if(findObject_->saveSession(path))
+		{
+			QMessageBox::information(this, tr("Session saved!"), tr("Session \"%1\" successfully saved (%2 objects, %3 vocabulary words)!").arg(path).arg(objWidgets_.size()).arg(findObject_->vocabulary()->size()));
 		}
 	}
 }
@@ -630,7 +636,7 @@ void MainWindow::loadVocabulary()
 	if(Settings::getGeneral_vocabularyFixed() &&
 	   Settings::getGeneral_invertedSearch())
 	{
-		QString path = QFileDialog::getOpenFileName(this, tr("Load vocabulary..."), Settings::workingDirectory(), "Data (*.yaml *.xml)");
+		QString path = QFileDialog::getOpenFileName(this, tr("Load vocabulary..."), Settings::workingDirectory(), "Data (*.yaml *.xml *.bin)");
 		if(!path.isEmpty())
 		{
 			if(findObject_->loadVocabulary(path))
@@ -654,10 +660,12 @@ void MainWindow::saveVocabulary()
 		QMessageBox::warning(this, tr("Saving vocabulary..."), tr("Vocabulary is empty!"));
 		return;
 	}
-	QString path = QFileDialog::getSaveFileName(this, tr("Save vocabulary..."), Settings::workingDirectory(), "Data (*.yaml *.xml)");
+	QString path = QFileDialog::getSaveFileName(this, tr("Save vocabulary..."), Settings::workingDirectory(), "Data (*.yaml *.xml *.bin)");
 	if(!path.isEmpty())
 	{
-		if(QFileInfo(path).suffix().compare("yaml") != 0 && QFileInfo(path).suffix().compare("xml") != 0)
+		if( QFileInfo(path).suffix().compare("yaml") != 0 &&
+			QFileInfo(path).suffix().compare("xml") != 0 &&
+			QFileInfo(path).suffix().compare("bin") != 0)
 		{
 			path.append(".yaml");
 		}
@@ -778,6 +786,7 @@ void MainWindow::hideObjectsFeatures()
 void MainWindow::addObjectFromScene()
 {
 	disconnect(camera_, SIGNAL(imageReceived(const cv::Mat &)), this, SLOT(update(const cv::Mat &)));
+	disconnect(camera_, SIGNAL(imageReceived(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)), this, SLOT(update(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)));
 	disconnect(camera_, SIGNAL(finished()), this, SLOT(stopProcessing()));
 	AddObjectDialog * dialog;
 	bool resumeCamera = camera_->isRunning();
@@ -813,6 +822,7 @@ void MainWindow::addObjectFromScene()
 	else
 	{
 		connect(camera_, SIGNAL(imageReceived(const cv::Mat &)), this, SLOT(update(const cv::Mat &)), Qt::UniqueConnection);
+		connect(camera_, SIGNAL(imageReceived(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)), this, SLOT(update(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)), Qt::UniqueConnection);
 		connect(camera_, SIGNAL(finished()), this, SLOT(stopProcessing()), Qt::UniqueConnection);
 		if(!sceneImage_.empty())
 		{
@@ -1046,9 +1056,12 @@ void MainWindow::showObject(ObjWidget * obj)
 		ui_->verticalLayout_objects->insertLayout(ui_->verticalLayout_objects->count()-1, vLayout);
 
 		QByteArray ba;
-		QBuffer buffer(&ba);
-		buffer.open(QIODevice::WriteOnly);
-		obj->pixmap().scaledToWidth(128).save(&buffer, "JPEG"); // writes image into JPEG format
+		if(obj->pixmap().width() > 0)
+		{
+			QBuffer buffer(&ba);
+			buffer.open(QIODevice::WriteOnly);
+			obj->pixmap().scaledToWidth(128).save(&buffer, "JPEG"); // writes image into JPEG format
+		}
 		imagesMap_.insert(obj->id(), ba);
 
 		// update objects size slider
@@ -1154,6 +1167,7 @@ void MainWindow::startProcessing()
 	if(camera_->start())
 	{
 		connect(camera_, SIGNAL(imageReceived(const cv::Mat &)), this, SLOT(update(const cv::Mat &)), Qt::UniqueConnection);
+		connect(camera_, SIGNAL(imageReceived(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)), this, SLOT(update(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)), Qt::UniqueConnection);
 		connect(camera_, SIGNAL(finished()), this, SLOT(stopProcessing()), Qt::UniqueConnection);
 		ui_->actionStop_camera->setEnabled(true);
 		ui_->actionPause_camera->setEnabled(true);
@@ -1211,6 +1225,7 @@ void MainWindow::stopProcessing()
 	if(camera_)
 	{
 		disconnect(camera_, SIGNAL(imageReceived(const cv::Mat &)), this, SLOT(update(const cv::Mat &)));
+		disconnect(camera_, SIGNAL(imageReceived(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)), this, SLOT(update(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)));
 		disconnect(camera_, SIGNAL(finished()), this, SLOT(stopProcessing()));
 		camera_->stop();
 	}
@@ -1274,6 +1289,11 @@ void MainWindow::rectHovered(int objId)
 }
 
 void MainWindow::update(const cv::Mat & image)
+{
+	update(image, Header(), cv::Mat(), 0.0);
+}
+
+void MainWindow::update(const cv::Mat & image, const Header & header, const cv::Mat & depth, float depthConstant)
 {
 	if(image.empty())
 	{
@@ -1412,6 +1432,14 @@ void MainWindow::update(const cv::Mat & image)
 			// add rectangle
 			QPen rectPen(obj->color());
 			rectPen.setWidth(Settings::getHomography_rectBorderWidth());
+			if(rect.isNull())
+			{
+				QMap<int, ObjSignature*>::const_iterator iter = findObject_->objects().constFind(id);
+				if(iter!=findObject_->objects().end())
+				{
+					rect = iter.value()->rect();
+				}
+			}
 			RectItem * rectItemScene = new RectItem(id, rect);
 			connect(rectItemScene, SIGNAL(hovered(int)), this, SLOT(rectHovered(int)));
 			rectItemScene->setPen(rectPen);
@@ -1531,7 +1559,7 @@ void MainWindow::update(const cv::Mat & image)
 
 		if(info.objDetected_.size() > 0 || Settings::getGeneral_sendNoObjDetectedEvents())
 		{
-			Q_EMIT objectsFound(info);
+			Q_EMIT objectsFound(info, header, depth, depthConstant);
 		}
 		ui_->label_objectsDetected->setNum(info.objDetected_.size());
 	}

@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QtCore/QTimer>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/core/core.hpp>
+#include "find_object/Header.h"
 
 class Ui_addObjectDialog;
 
@@ -56,6 +57,7 @@ public:
 
 private Q_SLOTS:
 	void update(const cv::Mat &);
+	void update(const cv::Mat &, const find_object::Header &, const cv::Mat &, float);
 	void next();
 	void back();
 	void cancel();
