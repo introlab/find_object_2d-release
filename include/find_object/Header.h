@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2010-2014, Mathieu Labbe - IntRoLab - Universite de Sherbrooke
+Copyright (c) 2011-2021, Mathieu Labbe - IntRoLab - Universite de Sherbrooke
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -24,21 +24,33 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
- 
-#ifndef VERSION_H_
-#define VERSION_H_
 
-// This is auto-generated!
-#define FINDOBJECT_VERSION "@PROJECT_VERSION@"
+#ifndef INCLUDE_FIND_OBJECT_HEADER_H_
+#define INCLUDE_FIND_OBJECT_HEADER_H_
 
-#define FINDOBJECT_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
-#define FINDOBJECT_VERSION_MINOR @PROJECT_VERSION_MINOR@
-#define FINDOBJECT_VERSION_PATCH @PROJECT_VERSION_PATCH@
+#include <stdint.h>
+#include <QString>
 
-#define FINDOBJECT_VERSION_COMPARE(major, minor, patch)  (major>=@PROJECT_VERSION_MAJOR@ || (major==@PROJECT_VERSION_MAJOR@ && minor>=@PROJECT_VERSION_MINOR@) || (major==@PROJECT_VERSION_MAJOR@ && minor==@PROJECT_VERSION_MINOR@ && patch >=@PROJECT_VERSION_PATCH@))
+namespace find_object {
 
-#define FINDOBJECT_NONFREE @NONFREE@
-#define FINDOBJECT_TORCH @TORCH@
+class Header {
+public:
+	Header() :
+		sec_(0),
+		nsec_(0)
+	{
+	}
+	Header(const char * frameId, uint64_t sec, uint64_t nsec) :
+		frameId_(frameId),
+		sec_(sec),
+		nsec_(nsec)
+	{
+	}
+	QString frameId_;
+	uint64_t sec_;
+	uint64_t nsec_;
+};
 
-#endif /* VERSION_H_ */
+}
 
+#endif /* INCLUDE_FIND_OBJECT_HEADER_H_ */

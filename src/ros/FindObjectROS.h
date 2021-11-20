@@ -48,12 +48,7 @@ public:
 	virtual ~FindObjectROS() {}
 
 public Q_SLOTS:
-	void publish(const find_object::DetectionInfo & info);
-
-	void setDepthData(const std::string & frameId,
-			const ros::Time & stamp,
-			const cv::Mat & depth,
-			float depthConstant);
+	void publish(const find_object::DetectionInfo & info, const find_object::Header & header, const cv::Mat & depth, float depthConstant);
 
 private:
 	cv::Vec3f getDepth(const cv::Mat & depthImage,
@@ -65,13 +60,10 @@ private:
 private:
 	ros::Publisher pub_;
 	ros::Publisher pubStamped_;
-
-	std::string frameId_;
-	ros::Time stamp_;
-	cv::Mat depth_;
-	float depthConstant_;
+	ros::Publisher pubInfo_;
 
 	std::string objFramePrefix_;
+	bool usePnP_;
 	tf::TransformBroadcaster tfBroadcaster_;
 
 };

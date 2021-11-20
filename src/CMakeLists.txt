@@ -74,6 +74,7 @@ SET(SRC_FILES
    ./utilite/UConversion.cpp
    ./rtabmap/PdfPlot.cpp
    ./json/jsoncpp.cpp
+   ./Compression.cpp
    ${moc_srcs} 
    ${moc_uis} 
    ${srcs_qrc}
@@ -93,6 +94,7 @@ SET(INCLUDE_DIRS
    ${CMAKE_CURRENT_SOURCE_DIR}
    ${OpenCV_INCLUDE_DIRS}
    ${CMAKE_CURRENT_BINARY_DIR} # for qt ui generated in binary dir
+   ${ZLIB_INCLUDE_DIRS}
 )
 IF(CATKIN_BUILD)
    SET(INCLUDE_DIRS
@@ -108,6 +110,7 @@ ENDIF(QT4_FOUND)
 SET(LIBRARIES
    ${QT_LIBRARIES} 
    ${OpenCV_LIBS} 
+   ${ZLIB_LIBRARIES} 
 )
 IF(CATKIN_BUILD)
    SET(LIBRARIES
@@ -115,6 +118,24 @@ IF(CATKIN_BUILD)
       ${catkin_LIBRARIES}
    )
 ENDIF(CATKIN_BUILD)
+
+IF(TORCH_FOUND)
+	SET(LIBRARIES
+		${LIBRARIES}
+		${TORCH_LIBRARIES}
+	)
+	SET(SRC_FILES
+		${SRC_FILES}
+		superpoint_torch/SuperPoint.cc
+	)
+	 SET(INCLUDE_DIRS
+	    ${TORCH_INCLUDE_DIRS}
+	    ${CMAKE_CURRENT_SOURCE_DIR}/superpoint_torch
+		${INCLUDE_DIRS}
+	)
+	ADD_DEFINITIONS("-DWITH_TORCH")
+ENDIF(TORCH_FOUND)
+
 
 #include files
 INCLUDE_DIRECTORIES(${INCLUDE_DIRS})
