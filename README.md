@@ -1,3 +1,26 @@
+## find_object_2d (foxy) - 0.7.0-1
+
+The packages in the `find_object_2d` repository were released into the `foxy` distro by running `/usr/bin/bloom-release find_object_2d --rosdistro foxy` on `Sun, 11 Dec 2022 22:47:58 -0000`
+
+The `find_object_2d` package was released.
+
+Version of package(s) in repository `find_object_2d`:
+
+- upstream repository: https://github.com/introlab/find-object.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `0.7.0-1`
+
+Versions of tools used:
+
+- bloom version: `0.11.2`
+- catkin_pkg version: `0.5.2`
+- rosdep version: `0.22.1`
+- rosdistro version: `0.9.0`
+- vcstools version: `0.1.42`
+
+
 ## find_object_2d (noetic) - 0.7.0-1
 
 The packages in the `find_object_2d` repository were released into the `noetic` distro by running `/usr/bin/bloom-release find_object_2d --rosdistro noetic` on `Sun, 11 Dec 2022 22:43:10 -0000`
