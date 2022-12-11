@@ -25,10 +25,10 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "CameraROS.h"
 #include "find_object/Settings.h"
 
 #include <opencv2/imgproc/imgproc.hpp>
+#include "CameraROS.h"
 #include <sensor_msgs/image_encodings.h>
 
 using namespace find_object;
@@ -74,12 +74,14 @@ CameraROS::CameraROS(bool subscribeDepth, QObject * parent) :
 		if(approxSync)
 		{
 			approxSync_ = new message_filters::Synchronizer<MyApproxSyncPolicy>(MyApproxSyncPolicy(queueSize), rgbSub_, depthSub_, cameraInfoSub_);
-			approxSync_->registerCallback(boost::bind(&CameraROS::imgDepthReceivedCallback, this, _1, _2, _3));
+			approxSync_->registerCallback(boost::bind(&CameraROS::imgDepthReceivedCallback, this,
+					boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3));
 		}
 		else
 		{
 			exactSync_ = new message_filters::Synchronizer<MyExactSyncPolicy>(MyExactSyncPolicy(queueSize), rgbSub_, depthSub_, cameraInfoSub_);
-			exactSync_->registerCallback(boost::bind(&CameraROS::imgDepthReceivedCallback, this, _1, _2, _3));
+			exactSync_->registerCallback(boost::bind(&CameraROS::imgDepthReceivedCallback, this,
+					boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3));
 		}
 	}
 }
