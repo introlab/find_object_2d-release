@@ -25,9 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "CameraROS.h"
-#include "FindObjectROS.h"
-
+#include <ros1/CameraROS.h>
+#include <ros1/FindObjectROS.h>
 #include <QApplication>
 #include <QDir>
 #include "find_object/MainWindow.h"
@@ -179,7 +178,7 @@ int main(int argc, char** argv)
 		QCoreApplication app(argc, argv);
 
 		// connect stuff:
-		QObject::connect(camera, SIGNAL(imageReceived(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)), findObjectROS, SLOT(detect(const cv::Mat &, const QString &, double, const cv::Mat &, float)));
+		QObject::connect(camera, SIGNAL(imageReceived(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)), findObjectROS, SLOT(detect(const cv::Mat &, const find_object::Header &, const cv::Mat &, float)));
 
 		//loop
 		camera->start();
