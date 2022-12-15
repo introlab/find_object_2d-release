@@ -1,0 +1,12 @@
+Source: ros-humble-find-object-2d
+Section: misc
+Priority: optional
+Maintainer: Mathieu Labbe <matlabbe@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), qtbase5-dev, ros-humble-ament-cmake, ros-humble-builtin-interfaces, ros-humble-cv-bridge, ros-humble-geometry-msgs, ros-humble-image-transport, ros-humble-message-filters, ros-humble-rclcpp, ros-humble-ros-environment, ros-humble-rosidl-default-generators, ros-humble-sensor-msgs, ros-humble-std-msgs, ros-humble-std-srvs, ros-humble-tf2, ros-humble-tf2-geometry-msgs, ros-humble-tf2-ros, ros-humble-ros-workspace, ros-humble-rosidl-typesupport-fastrtps-c, ros-humble-rosidl-typesupport-fastrtps-cpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-humble-find-object-2d
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, qtbase5-dev, ros-humble-builtin-interfaces, ros-humble-cv-bridge, ros-humble-geometry-msgs, ros-humble-image-transport, ros-humble-message-filters, ros-humble-rclcpp, ros-humble-rosidl-default-runtime, ros-humble-sensor-msgs, ros-humble-std-msgs, ros-humble-std-srvs, ros-humble-tf2, ros-humble-tf2-geometry-msgs, ros-humble-tf2-ros, ros-humble-ros-workspace
+Description: The find_object_2d package
